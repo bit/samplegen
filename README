@@ -1,0 +1,15 @@
+generate audio/video samples
+
+if you leave out target, a random temp file will be created.
+
+Usage: samplegen [options] [target]
+
+ Options:
+  -h, --help            show this help message and exit
+  -f FORMAT, --format=FORMAT
+                        container format: webm, ogv
+  -p PATTERN, --pattern=PATTERN
+                        video pattern: monochrome, snow
+  -a, --audio           audio only sample
+  -d DURATION, --duration=DURATION
+                        sample duration in seconds, default 10

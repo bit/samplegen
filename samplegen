@@ -1,0 +1,95 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+# vi:si:et:sw=4:sts=4:ts=4
+# GPL3+ 2012
+
+from __future__ import division
+
+import os
+import sys
+import subprocess
+from random import randint
+from optparse import OptionParser
+import tempfile
+
+
+def randcolor():
+    color = []
+    return tuple([randint(0, 255) for i in range(3)])
+
+
+def sample(target, pattern='monochrome', color=None, duration=None, audio_only=False):
+    fps = 25
+    aspect = [4/3, 16/9][randint(0, 1)]
+    width = 640
+    height = int(width / aspect)
+    samplerate = 44100
+    samplesperbuffer = 512
+    channels = 2
+    if target.endswith('webm'):
+        mux = 'webmmux'
+    else:
+        mux = 'oggmux'
+    vcodec = mux == 'webmmux' and 'vp8enc' or 'theoraenc'
+    if not duration:
+        duration = randint(5, 15)
+    if not color:
+        color = randcolor()
+    color = '0xFF%02x%02x%02x' % color
+    cmd = ['gst-launch']
+    cmd += [
+        'audiotestsrc',
+        'num-buffers=%d' % (int((samplerate * duration) / samplesperbuffer)),
+        'samplesperbuffer=%d' % samplesperbuffer,
+        'wave=8',
+        'freq=880',
+        '!',
+        'audio/x-raw-float, samplerate=%d,channels=%d' % (samplerate, channels),
+        '!',
+        'vorbisenc',
+        '!',
+        'm.'
+    ]
+    if not audio_only:
+        cmd += [
+            'videotestsrc',
+            'num-buffers=%d' % (int(fps * duration)),
+            pattern == 'monochrome' and 'pattern=solid-color' or 'pattern=snow',
+            'foreground-color="%s"'%color,
+            '!',
+            #'timeoverlay' '!',
+             'video/x-raw-yuv, framerate=%d/1,width=%d,height=%d' % (fps, width, height),
+            '!',
+            vcodec,
+            '!',
+            'm.'
+        ]
+    cmd += [mux, 'name=m', '!', 'filesink', 'location=%s' % target]
+    print 'encoding...'
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p.wait()
+
+
+if __name__ == '__main__':
+    usage = "usage: %prog [options] [target]"
+    parser = OptionParser(usage=usage)
+    parser.add_option('-f', '--format', dest='format',
+            help='container format: webm, ogv', default='webm', type='string')
+    parser.add_option('-p', '--pattern', dest='pattern',
+            help='video pattern: monochrome, snow', default='monochrome', type='string')
+    parser.add_option('-a', '--audio', dest='audio',
+            help='audio only sample', default=False, action="store_true")
+    parser.add_option('-d', '--duration', dest='duration',
+            help='sample duration in seconds, default 10', default=10.0, type='float')
+    (opts, args) = parser.parse_args()
+
+    if args:
+        target = args[0]
+    else:
+        if opts.audio:
+            prefix = 'RandomAudioSample_'
+        else:
+            prefix = 'RandomVideoSample_'
+        target = tempfile.mkstemp('.%s' % opts.format, prefix=prefix)[1]
+    sample(target, opts.pattern, duration=opts.duration, audio_only=opts.audio)
+    print target
