@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # vi:si:et:sw=4:sts=4:ts=4
 # GPL3+ 2012
-
 from __future__ import division
 
 import os
@@ -72,8 +71,7 @@ def sample(target, pattern='monochrome', color=None, duration=None, audio_only=F
             'm.'
         ]
     cmd += [mux, 'name=m', '!', 'filesink', 'location=%s' % target]
-    print 'creating %s sample: ' % (audio_only and 'audio' or 'audio/video'),
-    print target
+    print('creating %s sample: %s' % (audio_only and 'audio' or 'audio/video', target))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.wait()
 
@@ -92,10 +90,8 @@ def main():
     (opts, args) = parser.parse_args()
 
     if not installed(['gst-launch']):
-        print 'you need gst-launch to run this program'
-        print ''
-        print 'sudo apt-get install gstreamer-tools'
-        print ''
+        print('you need gst-launch to run this program\n')
+        print('sudo apt-get install gstreamer-tools\n')
         sys.exit(1)
 
     if args:
